@@ -34,12 +34,13 @@ class FileValidator:
     }
 
     @classmethod
-    def validate_file(cls, file_path: Path) -> tuple[str, str]:
+    def validate_file(cls, file_path: Path, filename: Optional[str] = None) -> tuple[str, str]:
         """
         Validate a file and return (file_type, mime_type).
 
         Args:
             file_path: Path to the file
+            filename: Optional original filename (used for extension validation)
 
         Returns:
             Tuple of (file_type, mime_type) where file_type is 'image' or 'text'
@@ -61,8 +62,13 @@ class FileValidator:
         if file_size == 0:
             raise FileTypeError("File is empty")
 
-        # Get extension
-        extension = file_path.suffix.lower()
+        # Get extension - use provided filename if available (e.g., for temp files)
+        # otherwise use file_path.suffix
+        if filename:
+            extension = Path(filename).suffix.lower()
+        else:
+            extension = file_path.suffix.lower()
+            
         if not extension:
             raise FileTypeError("File has no extension")
 

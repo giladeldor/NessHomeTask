@@ -52,8 +52,8 @@ class AssetService:
             FileValidationError: If file validation fails
             FileProcessingError: If save/processing fails
         """
-        # Step 1: Validate file
-        file_type, mime_type = FileValidator.validate_file(source_path)
+        # Step 1: Validate file (pass original_filename so extension is recognized)
+        file_type, mime_type = FileValidator.validate_file(source_path, original_filename)
 
         # Step 2: Generate destination path
         sanitized_name = sanitize_filename(original_filename)
