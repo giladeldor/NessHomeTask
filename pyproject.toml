@@ -13,8 +13,8 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "backend", from = "src"}]
+packages = [{include = "app", from = "src"}]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+build-app = "poetry.core.masonry.api"
