@@ -64,11 +64,11 @@ class AIService:
 
             return description or None, tags_json, keywords_json
 
-        except AIServiceError:
+        except AIServiceError as e:
             # Log and return None for graceful degradation
-            # TODO: Add proper logging
+            print(f"DEBUG: AIServiceError in metadata generation: {str(e)}")
             return None, None, None
         except Exception as e:
             # Unexpected error - log but don't raise
-            # TODO: Add proper logging
+            print(f"DEBUG: Unexpected error in metadata generation: {type(e).__name__}: {str(e)}")
             return None, None, None

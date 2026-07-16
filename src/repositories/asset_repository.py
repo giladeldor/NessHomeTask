@@ -147,6 +147,7 @@ class AssetRepository:
         Search across assets using LIKE queries.
 
         Searches in:
+        - Asset.filename
         - metadata.description
         - metadata.tags
         - metadata.keywords
@@ -167,9 +168,10 @@ class AssetRepository:
                 Metadata.tags,
                 Metadata.keywords,
             )
-            .join(Metadata, Asset.id == Metadata.asset_id)
+            .outerjoin(Metadata, Asset.id == Metadata.asset_id)
             .filter(
-                (Metadata.description.ilike(search_term))
+                (Asset.filename.ilike(search_term))
+                | (Metadata.description.ilike(search_term))
                 | (Metadata.tags.ilike(search_term))
                 | (Metadata.keywords.ilike(search_term))
             )
