@@ -1,8 +1,48 @@
+# Python
 .venv/
+venv/
+env/
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
 
-*/.pytest_cache/
-backend/data/
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Runtime
+uploads/*
+!uploads/.gitkeep
+data/*
+!data/.gitkeep
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
 frontend/node_modules/
 frontend/dist/
+backend/data/
+.venv/
+poetry.lock
+

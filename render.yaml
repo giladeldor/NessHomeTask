@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: knowledge-management-system
+    env: python
+    plan: free
+    buildCommand: poetry install
+    startCommand: bash scripts/start.sh
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:///./data/knowledge_base.db
+      - key: UPLOAD_DIR
+        value: /app/uploads
+      - key: MAX_FILE_SIZE
+        value: "10485760"
+      - key: AI_TIMEOUT
+        value: "25"
+      - key: DEBUG
+        value: "false"
+    healthCheckPath: /api/health
+    healthCheckInterval: 30
+    restartPolicyType: always
+    disks:
+      - name: data
+        mountPath: /app/data
+        sizeGB: 1
+      - name: uploads
+        mountPath: /app/uploads
+        sizeGB: 5
