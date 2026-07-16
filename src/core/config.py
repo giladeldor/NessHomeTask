@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     max_file_size: int = 10485760  # 10MB in bytes
 
     # AI Configuration
-    openai_api_key: str
+    openai_api_key: str = ""  # Optional for development/migrations
     ai_timeout: int = 25
 
     # Supported file types
