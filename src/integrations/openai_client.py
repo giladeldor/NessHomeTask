@@ -159,9 +159,10 @@ Return ONLY valid JSON, no explanation:
             # Parse JSON from response
             return self._parse_json_response(response_text)
 
-        except Timeout as e:
-            raise AITimeoutError(f"OpenAI request timed out after {self.timeout}s: {str(e)}")
         except APIError as e:
+            # Check if it's a timeout error
+            if "timeout" in str(e).lower() or isinstance(e, Timeout):
+                raise AITimeoutError(f"OpenAI request timed out: {str(e)}")
             raise AIServiceError(f"OpenAI API error: {str(e)}")
         except Exception as e:
             if isinstance(e, (AIServiceError, AITimeoutError, AIParsingError)):

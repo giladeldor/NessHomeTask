@@ -78,8 +78,8 @@ class AssetService:
             # Step 4: Save file
             shutil.copy2(source_path, destination_path)
 
-            # Step 5: Update asset file path
-            asset.file_path = str(destination_path.relative_to(Path.cwd()))
+            # Step 5: Update asset file path (use absolute path)
+            asset.file_path = str(destination_path.absolute())
             self.db.commit()
             self.db.refresh(asset)
 

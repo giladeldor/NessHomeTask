@@ -84,7 +84,9 @@ class FileValidator:
         # Additional validation based on type
         if file_type == "image":
             cls._validate_image(file_path)
-        elif file_type == "text":
+        elif file_type == "text" and extension == ".txt":
+            # Only validate plain text files for UTF-8 encoding
+            # PDF and DOCX are binary formats, so skip validation
             cls._validate_text_file(file_path)
 
         return file_type, mime_type
