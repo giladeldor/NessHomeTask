@@ -52,6 +52,7 @@ class Metadata(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     tags: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string: '["tag1", "tag2"]'
     keywords: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON string: '["kw1", "kw2"]'
+    extracted_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Raw text from file
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

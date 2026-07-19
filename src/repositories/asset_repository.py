@@ -87,6 +87,7 @@ class AssetRepository:
         description: Optional[str] = None,
         tags: Optional[str] = None,
         keywords: Optional[str] = None,
+        extracted_text: Optional[str] = None,
     ) -> Metadata:
         """
         Create metadata for an asset.
@@ -96,6 +97,7 @@ class AssetRepository:
             description: Metadata description (JSON string)
             tags: JSON array string of tags
             keywords: JSON array string of keywords
+            extracted_text: Raw text extracted from the file
 
         Returns:
             Created Metadata instance
@@ -105,6 +107,7 @@ class AssetRepository:
             description=description,
             tags=tags,
             keywords=keywords,
+            extracted_text=extracted_text,
         )
         self.db.add(metadata)
         self.db.commit()
@@ -121,6 +124,7 @@ class AssetRepository:
         description: Optional[str] = None,
         tags: Optional[str] = None,
         keywords: Optional[str] = None,
+        extracted_text: Optional[str] = None,
     ) -> Optional[Metadata]:
         """
         Update metadata for an asset.
@@ -136,6 +140,8 @@ class AssetRepository:
                 metadata.tags = tags
             if keywords is not None:
                 metadata.keywords = keywords
+            if extracted_text is not None:
+                metadata.extracted_text = extracted_text
             self.db.commit()
             self.db.refresh(metadata)
         return metadata
@@ -174,6 +180,7 @@ class AssetRepository:
                 | (Metadata.description.ilike(search_term))
                 | (Metadata.tags.ilike(search_term))
                 | (Metadata.keywords.ilike(search_term))
+                | (Metadata.extracted_text.ilike(search_term))
             )
             .order_by(Asset.created_at.desc())
             .all()

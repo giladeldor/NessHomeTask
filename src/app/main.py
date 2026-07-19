@@ -21,7 +21,10 @@ from src.api.schemas import ErrorResponseSchema
 from src.core.database import init_db
 from src.core.exceptions import KMSException
 from src.core.logging_config import get_logger, setup_logging
+from src.services.asset_service import backfill_extracted_text
 
+# Configure logging once at import time (avoids multiprocessing conflicts with --reload)
+setup_logging()
 logger = get_logger(__name__)
 
 
@@ -116,7 +119,6 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize database on startup."""
-    setup_logging()
     try:
         init_db()
         logger.info("Database initialized successfully")
@@ -125,6 +127,10 @@ async def startup_event() -> None:
         logger.critical("Failed to initialize database: %s", e, exc_info=True)
         print(f"❌ Failed to initialize database: {str(e)}")
         raise
+
+    # Backfill extracted_text for any existing assets that predate this feature
+    import threading
+    threading.Thread(target=backfill_extracted_text, daemon=True).start()
 
 
 @app.on_event("shutdown")

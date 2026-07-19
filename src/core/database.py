@@ -37,5 +37,14 @@ def get_db():
 
 
 def init_db() -> None:
-    """Initialize database (create all tables)."""
+    """Initialize database (create all tables) and apply any missing column migrations."""
     Base.metadata.create_all(bind=engine)
+
+    # Add extracted_text column to existing metadata tables that predate this column
+    from sqlalchemy import text, inspect
+    with engine.connect() as conn:
+        inspector = inspect(engine)
+        existing_cols = {col["name"] for col in inspector.get_columns("metadata")}
+        if "extracted_text" not in existing_cols:
+            conn.execute(text("ALTER TABLE metadata ADD COLUMN extracted_text TEXT"))
+            conn.commit()

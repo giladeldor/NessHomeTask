@@ -25,22 +25,86 @@ from src.utils.helpers import sanitize_filename
 logger = get_logger(__name__)
 
 
+def backfill_extracted_text() -> None:
+    """
+    Backfill extracted_text for all existing text assets that are missing it.
+    Runs once in a background thread at startup.
+    """
+    logger.info("Starting backfill of extracted_text for existing assets...")
+    db = SessionLocal()
+    try:
+        from src.models.asset import Asset, Metadata
+        from src.utils.text_extractor import TextExtractor
+
+        # Find all text assets
+        text_assets = db.query(Asset).filter(Asset.file_type == "text").all()
+        repo = AssetRepository(db)
+        updated = 0
+
+        for asset in text_assets:
+            # Skip if already has extracted_text
+            meta = repo.get_metadata_by_asset_id(asset.id)
+            if meta and meta.extracted_text:
+                continue
+
+            file_path = Path(asset.file_path)
+            if not file_path.exists():
+                logger.warning("Backfill: file not found for asset_id=%d (%s)", asset.id, asset.file_path)
+                continue
+
+            try:
+                text = TextExtractor.extract_text(file_path)
+                if not text:
+                    continue
+                if meta:
+                    repo.update_metadata(asset.id, extracted_text=text)
+                else:
+                    repo.create_metadata(asset.id, extracted_text=text)
+                updated += 1
+                logger.debug("Backfill: extracted %d chars for asset_id=%d (%s)", len(text), asset.id, asset.filename)
+            except Exception as e:
+                logger.warning("Backfill: failed for asset_id=%d: %s", asset.id, e)
+
+        logger.info("Backfill complete: updated %d / %d text assets", updated, len(text_assets))
+    except Exception as e:
+        logger.error("Backfill failed: %s", e, exc_info=True)
+    finally:
+        db.close()
+
+
 def _generate_and_store_metadata(asset_id: int, file_path: Path, file_type: str) -> None:
     """Run AI metadata generation in a background thread with its own DB session."""
     logger.debug("Background metadata generation started for asset_id=%d", asset_id)
     db = SessionLocal()
     try:
+        repo = AssetRepository(db)
+
+        # Always extract text (works without OpenAI)
+        extracted_text = None
+        if file_type == "text":
+            try:
+                from src.utils.text_extractor import TextExtractor
+                extracted_text = TextExtractor.extract_text(file_path)
+                logger.debug("Extracted %d chars of text from asset_id=%d", len(extracted_text or ""), asset_id)
+            except Exception as e:
+                logger.warning("Text extraction failed for asset_id=%d: %s", asset_id, e)
+
+        # Attempt AI metadata (may fail if quota exceeded)
         ai_service = AIService()
         description, tags_json, keywords_json = ai_service.generate_metadata(file_path, file_type)
-        if description or tags_json or keywords_json:
-            repo = AssetRepository(db)
+
+        if description or tags_json or keywords_json or extracted_text:
             repo.create_metadata(
                 asset_id=asset_id,
                 description=description,
                 tags=tags_json,
                 keywords=keywords_json,
+                extracted_text=extracted_text,
             )
-            logger.info("Metadata stored for asset_id=%d", asset_id)
+            logger.info(
+                "Metadata stored for asset_id=%d (ai=%s, text_chars=%d)",
+                asset_id, "yes" if description else "no", len(extracted_text or ""),
+            )
         else:
             logger.debug("No metadata generated for asset_id=%d", asset_id)
     except Exception as e:
