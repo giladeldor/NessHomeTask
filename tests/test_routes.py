@@ -23,8 +23,11 @@ from sqlalchemy.orm import Session
 from src.app.main import app
 from src.core.database import Base, SessionLocal, engine, get_db
 
-# Create test client
-client = TestClient(app)
+
+@pytest.fixture(scope="function")
+def client() -> TestClient:
+    """Create test client for each test."""
+    return TestClient(app)
 
 
 @pytest.fixture(scope="function")
