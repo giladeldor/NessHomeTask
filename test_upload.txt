@@ -1,7 +1,0 @@
-This is a test document about artificial intelligence and machine learning.
-
-Artificial intelligence (AI) is transforming how we work and live. Machine learning models can now process images and text with remarkable accuracy. Computer vision is used in medical imaging to detect diseases early. Natural language processing powers virtual assistants and translation services.
-
-Companies are investing heavily in AI research and development. Deep learning networks require massive amounts of data and computing power. GPUs and TPUs have revolutionized AI training capabilities. The future of technology depends on advances in artificial intelligence.
-
-Key concepts in AI: neural networks, algorithms, supervised learning, unsupervised learning, reinforcement learning, and transfer learning. These techniques enable machines to learn from data without explicit programming.
