@@ -21,7 +21,7 @@ from src.api.schemas import ErrorResponseSchema
 from src.core.database import init_db
 from src.core.exceptions import KMSException
 from src.core.logging_config import get_logger, setup_logging
-from src.services.asset_service import backfill_extracted_text
+from src.services.asset_service import backfill_extracted_text, backfill_image_metadata
 
 # Configure logging once at import time (avoids multiprocessing conflicts with --reload)
 setup_logging()
@@ -131,6 +131,7 @@ async def startup_event() -> None:
     # Backfill extracted_text for any existing assets that predate this feature
     import threading
     threading.Thread(target=backfill_extracted_text, daemon=True).start()
+    threading.Thread(target=backfill_image_metadata, daemon=True).start()
 
 
 @app.on_event("shutdown")

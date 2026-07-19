@@ -11,10 +11,23 @@ from typing import Optional
 from src.core.exceptions import AIServiceError
 from src.core.logging_config import get_logger
 from src.integrations.openai_client import OpenAIClient
+from src.integrations.local_vision import get_local_vision_client
 from src.utils.helpers import list_to_json
 from src.utils.text_extractor import TextExtractor
 
 logger = get_logger(__name__)
+
+
+def _try_local_vision_image(file_path: Path) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    """Attempt image analysis via local BLIP model. Returns (description, tags_json, keywords_json) or (None,None,None)."""
+    try:
+        client = get_local_vision_client()
+        description, tags_json, keywords_json = client.generate_metadata_for_image(str(file_path))
+        logger.info("Local vision image analysis succeeded for %s", file_path.name)
+        return description, tags_json, keywords_json
+    except Exception as e:
+        logger.warning("Local vision image analysis failed: %s", e)
+        return None, None, None
 
 
 class AIService:
@@ -69,8 +82,14 @@ class AIService:
             return description or None, tags_json, keywords_json
 
         except AIServiceError as e:
-            logger.warning("AI metadata generation failed (degrading gracefully): %s", e)
+            logger.warning("OpenAI metadata generation failed (degrading gracefully): %s", e)
+            # For images, try local vision as fallback
+            if file_type == "image":
+                logger.info("Trying local vision as fallback for image: %s", file_path.name)
+                return _try_local_vision_image(file_path)
             return None, None, None
         except Exception as e:
             logger.error("Unexpected error in metadata generation: %s", e, exc_info=True)
+            if file_type == "image":
+                return _try_local_vision_image(file_path)
             return None, None, None

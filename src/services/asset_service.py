@@ -113,6 +113,52 @@ def _generate_and_store_metadata(asset_id: int, file_path: Path, file_type: str)
         db.close()
 
 
+def backfill_image_metadata() -> None:
+    """
+    Backfill AI metadata for all existing image assets that have no description.
+    Runs once in a background thread at startup using local vision model (no API needed).
+    """
+    logger.info("Starting image metadata backfill via local vision...")
+    db = SessionLocal()
+    try:
+        from src.models.asset import Asset, Metadata
+        from src.integrations.local_vision import get_local_vision_client
+        from src.utils.helpers import list_to_json
+
+        image_assets = db.query(Asset).filter(Asset.file_type == "image").all()
+        repo = AssetRepository(db)
+        updated = 0
+        client = get_local_vision_client()
+
+        for asset in image_assets:
+            meta = repo.get_metadata_by_asset_id(asset.id)
+            if meta and meta.description:
+                continue  # Already has AI description
+
+            file_path = Path(asset.file_path)
+            if not file_path.exists():
+                logger.warning("Image backfill: file not found for asset_id=%d", asset.id)
+                continue
+
+            try:
+                description, tags_json, keywords_json = client.generate_metadata_for_image(str(file_path))
+
+                if meta:
+                    repo.update_metadata(asset.id, description=description, tags=tags_json, keywords=keywords_json)
+                else:
+                    repo.create_metadata(asset.id, description=description, tags=tags_json, keywords=keywords_json)
+                updated += 1
+                logger.info("Image backfill: processed asset_id=%d (%s): %s", asset.id, asset.filename, description)
+            except Exception as e:
+                logger.warning("Image backfill: failed for asset_id=%d: %s", asset.id, e)
+
+        logger.info("Image metadata backfill complete: updated %d / %d image assets", updated, len(image_assets))
+    except Exception as e:
+        logger.error("Image backfill failed: %s", e, exc_info=True)
+    finally:
+        db.close()
+
+
 class AssetService:
     """Service for managing assets."""
 

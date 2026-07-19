@@ -21,6 +21,7 @@ pillow = "^10.1.0"
 pdfplumber = "^0.10.3"
 python-docx = "^0.8.11"
 jinja2 = "^3.1.2"
+transformers = "^5.14.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

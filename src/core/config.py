@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     # AI Configuration
     openai_api_key: str = ""  # Optional for development/migrations
     ai_timeout: int = 25
+    gemini_api_key: str = ""  # Fallback for image analysis (free tier)
 
     # Supported file types
     allowed_text_extensions: tuple[str, ...] = (".txt", ".pdf", ".doc", ".docx")
