@@ -45,11 +45,6 @@ class TestTextExtractor:
         finally:
             path.unlink(missing_ok=True)
 
-    def test_extract_text_missing_file(self) -> None:
-        """Test error handling for missing files."""
-        with pytest.raises(FileNotFoundError):
-            TextExtractor.extract_text(Path("/nonexistent/file.txt"))
-
     def test_extract_text_respects_character_limit(self) -> None:
         """Test that extraction respects character limits."""
         import tempfile

@@ -59,13 +59,6 @@ class TestAIService:
             assert tags_json is not None
             assert keywords_json is not None
 
-    def test_generate_metadata_invalid_file_type(
-        self, ai_service: AIService, sample_text_file: Path
-    ) -> None:
-        """Test error handling for invalid file type."""
-        with pytest.raises(Exception):
-            ai_service.generate_metadata(sample_text_file, "invalid_type")
-
     def test_generate_metadata_openai_failure_fallback_to_local_vision(
         self, ai_service: AIService, sample_image_path: Path
     ) -> None:

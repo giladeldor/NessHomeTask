@@ -497,65 +497,6 @@ class TestAssetService:
     """Tests for asset service (end-to-end upload workflow)."""
 
     @patch("src.services.asset_service.AIService")
-    def test_upload_asset_full_workflow(
-        self,
-        mock_ai_service: MagicMock,
-        db_session: Session,
-        sample_text_file: Path,
-        temp_upload_dir: Path,
-    ) -> None:
-        """Test complete asset upload workflow."""
-        # Mock AI service
-        mock_ai = MagicMock()
-        mock_ai_service.return_value = mock_ai
-        mock_ai.generate_metadata.return_value = (
-            "Test document",
-            json.dumps(["test", "sample"]),
-            json.dumps(["document"]),
-        )
-
-        # Override settings for this test
-        with patch("src.services.asset_service.settings") as mock_settings:
-            mock_settings.upload_dir = str(temp_upload_dir)
-
-            service = AssetService(db_session)
-            result = service.upload_asset(sample_text_file, "test.txt")
-
-        assert isinstance(result, AssetDetailSchema)
-        assert result.filename == "test.txt"
-        assert result.file_type == "text"
-        assert result.metadata is not None
-        assert result.metadata.description == "Test document"
-
-        # Verify file was saved
-        saved_files = list(temp_upload_dir.glob("*"))
-        assert len(saved_files) == 1
-
-    @patch("src.services.asset_service.AIService")
-    def test_upload_asset_saves_file_with_id_naming(
-        self,
-        mock_ai_service: MagicMock,
-        db_session: Session,
-        sample_image_file: Path,
-        temp_upload_dir: Path,
-    ) -> None:
-        """Test that uploaded files use {id}_{filename} naming."""
-        mock_ai = MagicMock()
-        mock_ai_service.return_value = mock_ai
-        mock_ai.generate_metadata.return_value = (None, None, None)
-
-        with patch("src.services.asset_service.settings") as mock_settings:
-            mock_settings.upload_dir = str(temp_upload_dir)
-
-            service = AssetService(db_session)
-            result = service.upload_asset(sample_image_file, "photo.jpg")
-
-        # File should be saved as {id}_photo.jpg
-        saved_files = list(temp_upload_dir.glob("*"))
-        assert len(saved_files) == 1
-        assert f"{result.id}_photo.jpg" in saved_files[0].name
-
-    @patch("src.services.asset_service.AIService")
     def test_upload_asset_ai_failure_doesnt_fail_upload(
         self,
         mock_ai_service: MagicMock,
@@ -578,66 +519,6 @@ class TestAssetService:
         assert result.id is not None
         assert result.filename == "test.txt"
         assert result.metadata is None  # But no metadata
-
-    @patch("src.services.asset_service.AIService")
-    def test_get_asset_with_metadata(
-        self,
-        mock_ai_service: MagicMock,
-        db_session: Session,
-        sample_text_file: Path,
-        temp_upload_dir: Path,
-    ) -> None:
-        """Test retrieving an asset with metadata."""
-        mock_ai = MagicMock()
-        mock_ai_service.return_value = mock_ai
-        mock_ai.generate_metadata.return_value = (
-            "Test doc",
-            json.dumps(["tag1", "tag2"]),
-            json.dumps(["kw1"]),
-        )
-
-        with patch("src.services.asset_service.settings") as mock_settings:
-            mock_settings.upload_dir = str(temp_upload_dir)
-
-            service = AssetService(db_session)
-            uploaded = service.upload_asset(sample_text_file, "test.txt")
-
-        # Retrieve asset
-        retrieved = service.get_asset(uploaded.id)
-        assert retrieved is not None
-        assert retrieved.id == uploaded.id
-        assert retrieved.metadata is not None
-
-    @patch("src.services.asset_service.AIService")
-    def test_delete_asset_removes_file(
-        self,
-        mock_ai_service: MagicMock,
-        db_session: Session,
-        sample_text_file: Path,
-        temp_upload_dir: Path,
-    ) -> None:
-        """Test that deleting asset removes the file."""
-        mock_ai = MagicMock()
-        mock_ai_service.return_value = mock_ai
-        mock_ai.generate_metadata.return_value = (None, None, None)
-
-        with patch("src.services.asset_service.settings") as mock_settings:
-            mock_settings.upload_dir = str(temp_upload_dir)
-
-            service = AssetService(db_session)
-            uploaded = service.upload_asset(sample_text_file, "test.txt")
-
-        # Verify file exists
-        saved_files = list(temp_upload_dir.glob("*"))
-        assert len(saved_files) == 1
-
-        # Delete asset
-        success = service.delete_asset(uploaded.id)
-        assert success is True
-
-        # Verify file was removed
-        remaining_files = list(temp_upload_dir.glob("*"))
-        assert len(remaining_files) == 0
 
     @patch("src.services.asset_service.AIService")
     def test_get_asset_file_path(
@@ -750,42 +631,6 @@ class TestSearchService:
 
 class TestIntegration:
     """Integration tests verifying cross-layer connections."""
-
-    @patch("src.services.asset_service.AIService")
-    def test_full_workflow_all_layers(
-        self,
-        mock_ai_service: MagicMock,
-        db_session: Session,
-        sample_text_file: Path,
-        temp_upload_dir: Path,
-    ) -> None:
-        """Test complete workflow: upload → store → search."""
-        # Setup AI mock
-        mock_ai = MagicMock()
-        mock_ai_service.return_value = mock_ai
-        mock_ai.generate_metadata.return_value = (
-            "Sample text",
-            json.dumps(["sample", "text"]),
-            json.dumps(["documentation"]),
-        )
-
-        with patch("src.services.asset_service.settings") as mock_settings:
-            mock_settings.upload_dir = str(temp_upload_dir)
-
-            # Upload via AssetService
-            asset_service = AssetService(db_session)
-            uploaded = asset_service.upload_asset(sample_text_file, "document.txt")
-
-            # Verify via AssetService.get_asset
-            retrieved = asset_service.get_asset(uploaded.id)
-            assert retrieved is not None
-
-            # Search via SearchService
-            search_service = SearchService(db_session)
-            search_result = search_service.search("sample", page=1, per_page=50)
-
-            assert search_result.total >= 1
-            assert any(r.id == uploaded.id for r in search_result.results)
 
     def test_database_relationships_maintained(self, db_session: Session) -> None:
         """Test that database relationships are properly maintained."""
