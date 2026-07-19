@@ -20,6 +20,9 @@ from src.api.routes import router
 from src.api.schemas import ErrorResponseSchema
 from src.core.database import init_db
 from src.core.exceptions import KMSException
+from src.core.logging_config import get_logger, setup_logging
+
+logger = get_logger(__name__)
 
 
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -78,6 +81,7 @@ app.add_middleware(
 @app.exception_handler(KMSException)
 async def kms_exception_handler(request: Request, exc: KMSException) -> JSONResponse:
     """Handle custom KMS exceptions."""
+    logger.warning("KMS exception on %s %s: %s", request.method, request.url.path, exc)
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={
@@ -90,6 +94,11 @@ async def kms_exception_handler(request: Request, exc: KMSException) -> JSONResp
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle unexpected exceptions."""
+    logger.error(
+        "Unhandled exception on %s %s: %s",
+        request.method, request.url.path, exc,
+        exc_info=True,
+    )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
@@ -107,10 +116,13 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 @app.on_event("startup")
 async def startup_event() -> None:
     """Initialize database on startup."""
+    setup_logging()
     try:
         init_db()
+        logger.info("Database initialized successfully")
         print("✅ Database initialized successfully")
     except Exception as e:
+        logger.critical("Failed to initialize database: %s", e, exc_info=True)
         print(f"❌ Failed to initialize database: {str(e)}")
         raise
 
@@ -118,6 +130,7 @@ async def startup_event() -> None:
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
     """Cleanup on shutdown."""
+    logger.info("Application shutting down")
     print("🛑 Application shutting down...")
 
 

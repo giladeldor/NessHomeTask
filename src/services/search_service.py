@@ -9,8 +9,11 @@ from typing import Optional
 from sqlalchemy.orm import Session
 
 from src.api.schemas import MetadataSchema, SearchResponseSchema, SearchResultSchema
+from src.core.logging_config import get_logger
 from src.repositories.asset_repository import AssetRepository
 from src.utils.helpers import json_to_list
+
+logger = get_logger(__name__)
 
 
 class SearchService:
@@ -46,12 +49,14 @@ class SearchService:
             )
 
         query = query.strip()
+        logger.info("Search query: '%s' (page=%d, per_page=%d)", query, page, per_page)
 
         # Calculate offset
         skip = (page - 1) * per_page
 
         # Search
         results, total = self.repository.search_assets(query, skip=skip, limit=per_page)
+        logger.debug("Search '%s' returned %d / %d results", query, len(results), total)
 
         # Convert to SearchResultSchema
         search_results = []

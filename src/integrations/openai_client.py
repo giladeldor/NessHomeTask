@@ -14,6 +14,9 @@ from openai import OpenAI, APIError, Timeout
 
 from src.core.config import settings
 from src.core.exceptions import AIServiceError, AITimeoutError, AIParsingError
+from src.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class OpenAIClient:
@@ -160,13 +163,15 @@ Return ONLY valid JSON, no explanation:
             return self._parse_json_response(response_text)
 
         except APIError as e:
-            # Check if it's a timeout error
             if "timeout" in str(e).lower() or isinstance(e, Timeout):
+                logger.warning("OpenAI request timed out: %s", e)
                 raise AITimeoutError(f"OpenAI request timed out: {str(e)}")
+            logger.warning("OpenAI API error: %s", e)
             raise AIServiceError(f"OpenAI API error: {str(e)}")
         except Exception as e:
             if isinstance(e, (AIServiceError, AITimeoutError, AIParsingError)):
                 raise
+            logger.error("Unexpected OpenAI client error: %s", e, exc_info=True)
             raise AIServiceError(f"Unexpected error calling OpenAI: {str(e)}")
 
     @staticmethod

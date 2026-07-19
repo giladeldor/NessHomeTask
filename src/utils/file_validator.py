@@ -11,6 +11,9 @@ from PIL import Image
 
 from src.core.config import settings
 from src.core.exceptions import FileSizeError, FileTypeError
+from src.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class FileValidator:
@@ -55,11 +58,15 @@ class FileValidator:
         # Check file size
         file_size = file_path.stat().st_size
         if file_size > cls.MAX_FILE_SIZE:
+            logger.warning(
+                "File rejected — too large: %d bytes (max %d)", file_size, cls.MAX_FILE_SIZE
+            )
             raise FileSizeError(
                 f"File size {file_size} bytes exceeds maximum {cls.MAX_FILE_SIZE} bytes"
             )
 
         if file_size == 0:
+            logger.warning("File rejected — empty file")
             raise FileTypeError("File is empty")
 
         # Get extension - use provided filename if available (e.g., for temp files)
@@ -78,6 +85,7 @@ class FileValidator:
         elif extension in cls.ALLOWED_IMAGE_TYPES:
             file_type = "image"
         else:
+            logger.warning("File rejected — unsupported extension: '%s'", extension)
             raise FileTypeError(
                 f"File type '{extension}' not allowed. "
                 f"Allowed text: {', '.join(cls.ALLOWED_TEXT_TYPES)}, "

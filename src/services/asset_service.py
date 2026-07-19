@@ -5,18 +5,48 @@ Handles asset upload, storage, and retrieval.
 """
 
 import shutil
+import threading
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine
 
 from src.api.schemas import AssetDetailSchema, MetadataSchema
 from src.core.config import settings
+from src.core.database import SessionLocal
 from src.core.exceptions import FileProcessingError
+from src.core.logging_config import get_logger
 from src.repositories.asset_repository import AssetRepository
 from src.services.ai_service import AIService
 from src.utils.file_validator import FileValidator
 from src.utils.helpers import sanitize_filename
+
+logger = get_logger(__name__)
+
+
+def _generate_and_store_metadata(asset_id: int, file_path: Path, file_type: str) -> None:
+    """Run AI metadata generation in a background thread with its own DB session."""
+    logger.debug("Background metadata generation started for asset_id=%d", asset_id)
+    db = SessionLocal()
+    try:
+        ai_service = AIService()
+        description, tags_json, keywords_json = ai_service.generate_metadata(file_path, file_type)
+        if description or tags_json or keywords_json:
+            repo = AssetRepository(db)
+            repo.create_metadata(
+                asset_id=asset_id,
+                description=description,
+                tags=tags_json,
+                keywords=keywords_json,
+            )
+            logger.info("Metadata stored for asset_id=%d", asset_id)
+        else:
+            logger.debug("No metadata generated for asset_id=%d", asset_id)
+    except Exception as e:
+        logger.error("Background metadata generation failed for asset_id=%d: %s", asset_id, e)
+    finally:
+        db.close()
 
 
 class AssetService:
@@ -26,7 +56,6 @@ class AssetService:
         """Initialize asset service."""
         self.db = db
         self.repository = AssetRepository(db)
-        self.ai_service = AIService()
         self.upload_dir = Path(settings.upload_dir)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
 
@@ -52,6 +81,7 @@ class AssetService:
             FileValidationError: If file validation fails
             FileProcessingError: If save/processing fails
         """
+        logger.info("Upload started: '%s' (%d bytes)", original_filename, source_path.stat().st_size)
         # Step 1: Validate file (pass original_filename so extension is recognized)
         file_type, mime_type = FileValidator.validate_file(source_path, original_filename)
 
@@ -83,30 +113,17 @@ class AssetService:
             self.db.commit()
             self.db.refresh(asset)
 
-            # Step 6: Generate AI metadata (non-blocking - errors don't fail upload)
-            description, tags_json, keywords_json = self.ai_service.generate_metadata(
-                destination_path, file_type
+            # Step 6: Kick off AI metadata generation in background (doesn't block upload)
+            thread = threading.Thread(
+                target=_generate_and_store_metadata,
+                args=(asset.id, destination_path, file_type),
+                daemon=True,
             )
+            thread.start()
+            logger.info("Upload complete: '%s' -> asset_id=%d (metadata generating in background)", original_filename, asset.id)
 
-            # Step 7: Store metadata
-            metadata = None
-            if description or tags_json or keywords_json:
-                metadata = self.repository.create_metadata(
-                    asset_id=asset.id,
-                    description=description,
-                    tags=tags_json,
-                    keywords=keywords_json,
-                )
-
-            # Step 8: Build response
+            # Step 7: Build response (metadata will be None until background thread finishes)
             metadata_schema = None
-            if metadata:
-                metadata_schema = MetadataSchema(
-                    description=metadata.description,
-                    tags=eval(metadata.tags) if metadata.tags else [],
-                    keywords=eval(metadata.keywords) if metadata.keywords else [],
-                )
-
             return AssetDetailSchema(
                 id=asset.id,
                 filename=asset.filename,
@@ -121,6 +138,7 @@ class AssetService:
             # Cleanup on error
             if destination_path and destination_path.exists():
                 destination_path.unlink()
+            logger.error("Upload failed for '%s': %s", original_filename, e, exc_info=True)
             raise FileProcessingError(f"Failed to process upload: {str(e)}")
 
     def get_asset(self, asset_id: int) -> Optional[AssetDetailSchema]:
@@ -177,9 +195,9 @@ class AssetService:
         if file_path.exists():
             try:
                 file_path.unlink()
+                logger.info("Deleted file from disk: %s", file_path.name)
             except Exception as e:
-                # Log error but continue with database deletion
-                pass
+                logger.warning("Could not delete file from disk: %s — %s", file_path, e)
 
         # Delete from database (cascades to metadata)
         return self.repository.delete_asset(asset_id)

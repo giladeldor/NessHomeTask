@@ -34,6 +34,7 @@ uploads/*
 data/*
 !data/.gitkeep
 *.db
+logs/
 
 # OS
 .DS_Store

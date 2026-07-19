@@ -9,9 +9,12 @@ from pathlib import Path
 from typing import Optional
 
 from src.core.exceptions import AIServiceError
+from src.core.logging_config import get_logger
 from src.integrations.openai_client import OpenAIClient
 from src.utils.helpers import list_to_json
 from src.utils.text_extractor import TextExtractor
+
+logger = get_logger(__name__)
 
 
 class AIService:
@@ -39,6 +42,7 @@ class AIService:
             AIServiceError: If unexpected error occurs
         """
         try:
+            logger.debug("Generating metadata for %s file: %s", file_type, file_path.name)
             if file_type == "image":
                 metadata = self.client.generate_metadata_for_image(file_path)
             elif file_type == "text":
@@ -65,10 +69,8 @@ class AIService:
             return description or None, tags_json, keywords_json
 
         except AIServiceError as e:
-            # Log and return None for graceful degradation
-            print(f"DEBUG: AIServiceError in metadata generation: {str(e)}")
+            logger.warning("AI metadata generation failed (degrading gracefully): %s", e)
             return None, None, None
         except Exception as e:
-            # Unexpected error - log but don't raise
-            print(f"DEBUG: Unexpected error in metadata generation: {type(e).__name__}: {str(e)}")
+            logger.error("Unexpected error in metadata generation: %s", e, exc_info=True)
             return None, None, None
