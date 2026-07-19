@@ -10,7 +10,6 @@ Provides REST API endpoints for:
 
 import tempfile
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session

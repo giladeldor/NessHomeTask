@@ -69,6 +69,7 @@ class SearchResultSchema(BaseModel):
     id: int
     filename: str
     file_type: str
+    file_size: int
     created_at: datetime
     metadata: MetadataSchema
     relevance_score: int

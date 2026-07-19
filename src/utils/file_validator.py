@@ -110,6 +110,7 @@ class FileValidator:
         """Validate image file integrity."""
         try:
             with Image.open(file_path) as img:
+                # Pillow API: verify() checks file integrity/header without full decode.
                 img.verify()
         except Exception as e:
             raise FileTypeError(f"Image file is corrupted or invalid: {str(e)}")

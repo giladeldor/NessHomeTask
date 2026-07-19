@@ -72,6 +72,7 @@ class SearchService:
                     id=result["id"],
                     filename=result["filename"],
                     file_type=result["file_type"],
+                    file_size=result["file_size"],
                     created_at=result["created_at"],
                     metadata=metadata_schema,
                     relevance_score=result["relevance_score"],

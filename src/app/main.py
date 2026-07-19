@@ -12,12 +12,10 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.openapi.utils import get_openapi
 
 from src.api.routes import router
-from src.api.schemas import ErrorResponseSchema
 from src.core.database import init_db
 from src.core.exceptions import KMSException
 from src.core.logging_config import get_logger, setup_logging
@@ -32,7 +30,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 
 
 def get_custom_swagger_ui_html() -> str:
-    """Generate custom Swagger UI with better styling and no try-it-out buttons."""
+    """Generate custom Swagger UI with better styling"""
     return get_swagger_ui_html(
         title="Knowledge Management System - API Docs",
         openapi_url="/openapi.json",

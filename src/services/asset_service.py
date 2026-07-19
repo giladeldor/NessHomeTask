@@ -9,8 +9,7 @@ import threading
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 from src.api.schemas import AssetDetailSchema, MetadataSchema
 from src.core.config import settings

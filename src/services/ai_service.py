@@ -4,7 +4,6 @@ AI metadata generation service.
 Orchestrates AI metadata generation for uploaded assets.
 """
 
-import json
 from pathlib import Path
 from typing import Optional
 
