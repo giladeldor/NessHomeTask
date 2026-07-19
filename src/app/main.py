@@ -8,25 +8,55 @@ Initializes the Knowledge Management System API with:
 - Database initialization
 """
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.utils import get_openapi
 
 from src.api.routes import router
 from src.api.schemas import ErrorResponseSchema
 from src.core.database import init_db
 from src.core.exceptions import KMSException
 
+
+from fastapi.openapi.docs import get_swagger_ui_html
+
+
+def get_custom_swagger_ui_html() -> str:
+    """Generate custom Swagger UI with better styling and no try-it-out buttons."""
+    return get_swagger_ui_html(
+        title="Knowledge Management System - API Docs",
+        openapi_url="/openapi.json",
+        swagger_ui_parameters={
+            "deepLinking": True,
+            "defaultModelsExpandDepth": -1,
+            "defaultModelExpandDepth": -1,
+            "docExpansion": "list",
+            "supportedSubmitMethods": [],  # Disable all execute buttons
+        },
+        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css",
+    )
+
 # Initialize FastAPI app
+def custom_docs(request: Request):
+    """Serve custom styled Swagger UI."""
+    return get_custom_swagger_ui_html()
+
+
 app = FastAPI(
     title="Knowledge Management System",
     description="A system for uploading, organizing, and searching documents with AI-generated metadata",
     version="0.1.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url="/openapi.json",
 )
+
+# Mount custom docs at /api/docs
+app.add_route("/api/docs", custom_docs, methods=["GET"])
 
 # ============================================================================
 # CORS Middleware
@@ -98,26 +128,46 @@ async def shutdown_event() -> None:
 app.include_router(router)
 
 # ============================================================================
-# Static Files (Optional - for serving frontend)
+# Static Files & Frontend Routes
 # ============================================================================
 
-# Uncomment if you want to serve static files (CSS, JS, images)
-# from pathlib import Path
-# static_dir = Path(__file__).parent.parent.parent / "static"
-# if static_dir.exists():
-#     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+static_dir = Path(__file__).parent / "static"
+
+# Mount static files directory
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+@app.get("/", include_in_schema=False)
+async def serve_frontend() -> FileResponse:
+    """Serve the main frontend application."""
+    index_file = static_dir / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file, media_type="text/html")
+    return {"error": "Frontend not available"}
+
+
+@app.get("/docs-ui", include_in_schema=False)
+async def serve_custom_docs() -> FileResponse:
+    """Serve custom API documentation UI."""
+    docs_file = static_dir / "docs.html"
+    if docs_file.exists():
+        return FileResponse(docs_file, media_type="text/html")
+    return {"error": "Documentation not available"}
 
 # ============================================================================
-# Root Endpoint
+# Root API Endpoint
 # ============================================================================
 
 
-@app.get("/", tags=["root"], summary="API Root")
-def root() -> dict[str, str]:
-    """Root endpoint with basic information."""
+@app.get("/api", tags=["root"], summary="API Information")
+def api_info() -> dict[str, str]:
+    """API root endpoint with basic information."""
     return {
         "name": "Knowledge Management System",
         "version": "0.1.0",
         "docs": "/api/docs",
+        "custom_docs": "/docs-ui",
         "health": "/api/health",
+        "frontend": "/",
     }

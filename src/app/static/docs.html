@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - Knowledge Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav a:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .endpoint {
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .endpoint:hover {
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.15);
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .endpoint-method {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            color: white;
+            font-weight: 600;
+            min-width: 55px;
+            text-align: center;
+            font-size: 0.85em;
+        }
+
+        .endpoint-method.get {
+            background: #2980b9;
+        }
+
+        .endpoint-method.post {
+            background: #27ae60;
+        }
+
+        .endpoint-method.delete {
+            background: #dc3545;
+        }
+
+        .endpoint-method.put {
+            background: #f39c12;
+        }
+
+        .endpoint-path {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .endpoint-description {
+            flex: 1;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .endpoint-toggle {
+            color: #667eea;
+            font-size: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .endpoint.collapsed .endpoint-toggle {
+            transform: rotate(-90deg);
+        }
+
+        .endpoint-body {
+            padding: 20px;
+            background: white;
+            display: none;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .endpoint.expanded .endpoint-body {
+            display: block;
+        }
+
+        .parameters, .responses {
+            margin-bottom: 20px;
+        }
+
+        .parameters h4, .responses h4 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .param-item, .response-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-left: 3px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .param-name {
+            font-weight: 600;
+            color: #333;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 5px;
+        }
+
+        .param-type {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            color: #667eea;
+            margin-left: 5px;
+        }
+
+        .param-desc {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            border-top: 1px solid #e9ecef;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .endpoint-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .endpoint-description {
+                margin-top: 10px;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 API Documentation</h1>
+            <p>Knowledge Management System REST API</p>
+            <div class="nav">
+                <a href="/">← Back to App</a>
+                <a href="/api/docs">Swagger UI</a>
+                <a href="/api/redoc">ReDoc</a>
+            </div>
+        </header>
+
+        <div class="content" id="endpoints"></div>
+
+        <footer>
+            <p>Knowledge Management System API v0.1.0</p>
+        </footer>
+    </div>
+
+    <script>
+        const endpoints = [
+            {
+                method: 'GET',
+                path: '/api/health',
+                description: 'Check API health status',
+                parameters: [],
+                responses: [
+                    {
+                        code: 200,
+                        description: 'API is healthy',
+                        example: '{"status": "healthy"}'
+                    }
+                ]
+            },
+            {
+                method: 'POST',
+                path: '/api/upload',
+                description: 'Upload a file (text or image)',
+                parameters: [
+                    {
+                        name: 'file',
+                        type: 'File',
+                        required: true,
+                        description: 'File to upload (max 10MB)'
+                    }
+                ],
+                responses: [
+                    {
+                        code: 201,
+                        description: 'File uploaded successfully',
+                        example: '{"success": true, "asset": {...}, "metadata": {...}}'
+                    },
+                    {
+                        code: 400,
+                        description: 'Invalid file'
+                    },
+                    {
+                        code: 413,
+                        description: 'File too large'
+                    }
+                ]
+            },
+            {
+                method: 'GET',
+                path: '/api/assets',
+                description: 'List all uploaded assets',
+                parameters: [
+                    {
+                        name: 'page',
+                        type: 'integer',
+                        required: false,
+                        description: 'Page number (default: 1)'
+                    },
+                    {
+                        name: 'per_page',
+                        type: 'integer',
+                        required: false,
+                        description: 'Results per page (default: 50, max: 500)'
+                    }
+                ],
+                responses: [
+                    {
+                        code: 200,
+                        description: 'List of assets',
+                        example: '{"assets": [...], "total": 5, "page": 1, "per_page": 50}'
+                    }
+                ]
+            },
+            {
+                method: 'GET',
+                path: '/api/assets/{id}',
+                description: 'Get asset details by ID',
+                parameters: [
+                    {
+                        name: 'id',
+                        type: 'integer',
+                        required: true,
+                        description: 'Asset ID'
+                    }
+                ],
+                responses: [
+                    {
+                        code: 200,
+                        description: 'Asset details',
+                        example: '{"id": 1, "filename": "test.txt", "file_type": "text", ...}'
+                    },
+                    {
+                        code: 404,
+                        description: 'Asset not found'
+                    }
+                ]
+            },
+            {
+                method: 'GET',
+                path: '/api/assets/{id}/download',
+                description: 'Download a file',
+                parameters: [
+                    {
+                        name: 'id',
+                        type: 'integer',
+                        required: true,
+                        description: 'Asset ID'
+                    }
+                ],
+                responses: [
+                    {
+                        code: 200,
+                        description: 'File downloaded'
+                    },
+                    {
+                        code: 404,
+                        description: 'Asset not found'
+                    }
+                ]
+            },
+            {
+                method: 'DELETE',
+                path: '/api/assets/{id}',
+                description: 'Delete an asset',
+                parameters: [
+                    {
+                        name: 'id',
+                        type: 'integer',
+                        required: true,
+                        description: 'Asset ID'
+                    }
+                ],
+                responses: [
+                    {
+                        code: 204,
+                        description: 'Asset deleted successfully'
+                    },
+                    {
+                        code: 404,
+                        description: 'Asset not found'
+                    }
+                ]
+            },
+            {
+                method: 'GET',
+                path: '/api/search',
+                description: 'Search for assets',
+                parameters: [
+                    {
+                        name: 'q',
+                        type: 'string',
+                        required: true,
+                        description: 'Search query (searches filenames and metadata)'
+                    },
+                    {
+                        name: 'page',
+                        type: 'integer',
+                        required: false,
+                        description: 'Page number (default: 1)'
+                    },
+                    {
+                        name: 'per_page',
+                        type: 'integer',
+                        required: false,
+                        description: 'Results per page (default: 50, max: 500)'
+                    }
+                ],
+                responses: [
+                    {
+                        code: 200,
+                        description: 'Search results',
+                        example: '{"query": "test", "results": [...], "total": 3, "page": 1, "per_page": 50}'
+                    }
+                ]
+            }
+        ];
+
+        function renderEndpoints() {
+            const container = document.getElementById('endpoints');
+            container.innerHTML = endpoints.map((ep, idx) => `
+                <div class="endpoint collapsed" onclick="toggleEndpoint(this)">
+                    <div class="endpoint-header">
+                        <span class="endpoint-method ${ep.method.toLowerCase()}">${ep.method}</span>
+                        <span class="endpoint-path">${ep.path}</span>
+                        <span class="endpoint-description">${ep.description}</span>
+                        <span class="endpoint-toggle">▶</span>
+                    </div>
+                    <div class="endpoint-body">
+                        ${ep.parameters.length > 0 ? `
+                            <div class="parameters">
+                                <h4>Parameters</h4>
+                                ${ep.parameters.map(p => `
+                                    <div class="param-item">
+                                        <div class="param-name">
+                                            ${p.name}
+                                            <span class="param-type">${p.type}</span>
+                                            ${p.required ? '<span style="color: #dc3545; margin-left: 5px;">*</span>' : ''}
+                                        </div>
+                                        <div class="param-desc">${p.description}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="responses">
+                            <h4>Responses</h4>
+                            ${ep.responses.map(r => `
+                                <div class="response-item">
+                                    <div class="param-name" style="color: #27ae60;">
+                                        ${r.code} - ${r.description}
+                                    </div>
+                                    ${r.example ? `
+                                        <div class="code-block">${r.example}</div>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleEndpoint(el) {
+            el.classList.toggle('collapsed');
+            el.classList.toggle('expanded');
+        }
+
+        renderEndpoints();
+    </script>
+</body>
+</html>
