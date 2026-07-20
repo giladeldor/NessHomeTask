@@ -192,8 +192,8 @@ class AssetRepository:
         )
 
         # Fallback: if no metadata-backed matches were found, inspect the actual file content
-        # for text assets that exist on disk. This makes content searches work even before
-        # background metadata generation has populated the database.
+        # for text assets or build a deterministic searchable text blob for images. This makes
+        # search more resilient when AI metadata generation has not populated the database yet.
         if not rows:
             assets = self.db.query(Asset).order_by(Asset.created_at.desc()).all()
             matched_assets = []
@@ -203,28 +203,25 @@ class AssetRepository:
                     if not file_path.exists():
                         continue
 
+                    searchable_text = ""
                     if asset.file_type == "text":
                         text = TextExtractor.extract_text(file_path)
-                        if text and query.lower() in text.lower():
-                            matched_assets.append(asset)
-                        continue
-
-                    if asset.file_type == "image":
+                        searchable_text = text or ""
+                    elif asset.file_type == "image":
                         metadata = self.db.query(Metadata).filter(Metadata.asset_id == asset.id).first()
-                        searchable_text = ""
-                        if metadata:
-                            searchable_text = " ".join(
-                                filter(None, [metadata.description, metadata.tags, metadata.keywords])
-                            )
+                        metadata_parts = [
+                            metadata.description if metadata and metadata.description else "",
+                            metadata.tags if metadata and metadata.tags else "",
+                            metadata.keywords if metadata and metadata.keywords else "",
+                        ]
+                        searchable_text = " ".join(filter(None, metadata_parts))
                         if not searchable_text:
-                            # Deterministic fallback for online deployments where the BLIP model is
-                            # unavailable or too slow. Use filename and extension clues so content
-                            # search still works for images without a generated metadata row.
                             filename_stem = file_path.stem.lower()
                             extension = file_path.suffix.lower().lstrip('.')
-                            searchable_text = f"image {filename_stem} {extension} photo picture visual"
-                        if searchable_text and query.lower() in searchable_text.lower():
-                            matched_assets.append(asset)
+                            searchable_text = f"image {filename_stem} {extension} photo picture visual upload"
+
+                    if searchable_text and query.lower() in searchable_text.lower():
+                        matched_assets.append(asset)
                 except Exception:
                     continue
 
