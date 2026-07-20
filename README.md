@@ -103,8 +103,6 @@ Knowledge Management System is a FastAPI-based document management and search pl
    copy .env.example .env
    ```
 
-   If .env.example is absent, create .env manually and include the required variables.
-
 3. Run database migrations:
 
    ```bash
