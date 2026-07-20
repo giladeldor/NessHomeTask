@@ -19,6 +19,9 @@ RUN pip install poetry
 # Copy dependency files and package metadata
 COPY pyproject.toml poetry.lock README.md ./
 
+# Copy package source before Poetry tries to install the current project
+COPY src ./src
+
 # Install dependencies
 RUN poetry install
 
