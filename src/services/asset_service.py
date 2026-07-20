@@ -216,7 +216,19 @@ class AssetService:
             self.db.commit()
             self.db.refresh(asset)
 
-            # Step 6: Kick off AI metadata generation in background (doesn't block upload)
+            # Step 6: Persist a lightweight searchable description immediately for image uploads.
+            # This ensures image searches work even if the background AI metadata generation is slow
+            # or unavailable in the deployed environment.
+            if file_type == "image":
+                fallback_description = f"image file {Path(original_filename).stem} {Path(original_filename).suffix.lower() or 'image'}"
+                self.repository.create_metadata(
+                    asset_id=asset.id,
+                    description=fallback_description,
+                    tags='["image", "photo", "upload"]',
+                    keywords='["image", "photo", "upload"]',
+                )
+
+            # Step 7: Kick off AI metadata generation in background (doesn't block upload)
             thread = threading.Thread(
                 target=_generate_and_store_metadata,
                 args=(asset.id, destination_path, file_type),
@@ -225,7 +237,7 @@ class AssetService:
             thread.start()
             logger.info("Upload complete: '%s' -> asset_id=%d (metadata generating in background)", original_filename, asset.id)
 
-            # Step 7: Build response (metadata will be None until background thread finishes)
+            # Step 8: Build response (metadata will be None until background thread finishes)
             metadata_schema = None
             return AssetDetailSchema(
                 id=asset.id,
