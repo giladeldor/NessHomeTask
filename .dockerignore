@@ -17,7 +17,6 @@ README.md
 .env.local
 uploads/*
 data/*
-poetry.lock
 .mypy_cache
 htmlcov
 .pytest_cache
