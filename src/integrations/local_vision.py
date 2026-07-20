@@ -3,9 +3,15 @@
 import json
 import logging
 from pathlib import Path
+from typing import Optional
 
 from PIL import Image
-from transformers import BlipProcessor, BlipForConditionalGeneration
+
+try:
+    from transformers import BlipProcessor, BlipForConditionalGeneration
+except ImportError:  # pragma: no cover - depends on environment
+    BlipProcessor = None  # type: ignore[assignment]
+    BlipForConditionalGeneration = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -14,11 +20,24 @@ class LocalVisionClient:
     """BLIP-based image analysis for metadata generation."""
 
     def __init__(self):
-        """Initialize BLIP model and processor."""
+        """Initialize BLIP model and processor when the optional dependency is available."""
+        self.available = False
+        self.processor = None
+        self.model = None
         logger.info("Loading BLIP vision model...")
-        self.processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-        self.model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
-        logger.info("BLIP model loaded successfully")
+        if BlipProcessor is None or BlipForConditionalGeneration is None:
+            logger.warning("BLIP vision is unavailable because transformers/PyTorch is not installed")
+            return
+
+        try:
+            self.processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+            self.model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+            self.available = True
+            logger.info("BLIP model loaded successfully")
+        except Exception as e:  # pragma: no cover - depends on runtime environment
+            logger.warning("BLIP vision is unavailable: %s", e)
+            self.processor = None
+            self.model = None
 
     def generate_metadata_for_image(self, image_path: str) -> tuple[str, str, str]:
         """
@@ -33,6 +52,10 @@ class LocalVisionClient:
             - tags_json: JSON string with 5 tags
             - keywords_json: JSON string with 8 keywords
         """
+        if not self.available:
+            logger.warning("BLIP vision unavailable; returning lightweight fallback metadata for %s", image_path)
+            return "image upload", '["image", "upload"]', '["image", "upload", "visual", "content"]'
+
         try:
             image = Image.open(image_path).convert("RGB")
             logger.debug(f"Opened image: {image_path} ({image.size})")

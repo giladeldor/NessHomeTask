@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
+import src.integrations.local_vision as local_vision
 from src.integrations.local_vision import LocalVisionClient
 
 
@@ -50,3 +51,29 @@ class TestLocalVisionClient:
         client1 = get_local_vision_client()
         client2 = get_local_vision_client()
         assert client1 is client2
+
+    def test_missing_torch_falls_back_gracefully(self, monkeypatch) -> None:
+        """Missing optional dependencies should not crash the vision client."""
+
+        class FailingProcessor:
+            @classmethod
+            def from_pretrained(cls, *args, **kwargs):
+                raise ImportError("PyTorch was not found")
+
+        class FailingModel:
+            @classmethod
+            def from_pretrained(cls, *args, **kwargs):
+                raise ImportError("PyTorch was not found")
+
+        monkeypatch.setattr(local_vision, "BlipProcessor", FailingProcessor)
+        monkeypatch.setattr(local_vision, "BlipForConditionalGeneration", FailingModel)
+        local_vision._client = None
+
+        client = local_vision.get_local_vision_client()
+        assert client is not None
+        assert client.available is False
+
+        description, tags_json, keywords_json = client.generate_metadata_for_image("/tmp/example.jpg")
+        assert description == "image upload"
+        assert tags_json == '["image", "upload"]'
+        assert keywords_json == '["image", "upload", "visual", "content"]'
