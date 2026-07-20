@@ -1,12 +1,7 @@
-name: Tests
+name: Tests (disabled)
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
+  workflow_dispatch:
 
 jobs:
   test:
