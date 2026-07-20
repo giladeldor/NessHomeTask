@@ -1,5 +1,3 @@
-"""Tests for local vision module."""
-
 import json
 from pathlib import Path
 

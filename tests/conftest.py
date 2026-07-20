@@ -1,5 +1,3 @@
-"""Pytest configuration and fixtures for testing."""
-
 import json
 import tempfile
 import uuid

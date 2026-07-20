@@ -1,13 +1,3 @@
-"""
-Integration tests for database models, repository, and schemas.
-
-These tests verify that:
-1. Models are correctly configured
-2. Database relationships work
-3. Repository operations function properly
-4. Schemas validate correctly
-"""
-
 import json
 from datetime import datetime
 
@@ -24,6 +14,15 @@ from src.core.database import Base, SessionLocal, engine
 from src.models.asset import Asset, Metadata
 from src.repositories.asset_repository import AssetRepository
 
+"""
+Integration tests for database models, repository, and schemas.
+
+These tests verify that:
+1. Models are correctly configured
+2. Database relationships work
+3. Repository operations function properly
+4. Schemas validate correctly
+"""
 
 @pytest.fixture(scope="function")
 def db_session() -> Session:

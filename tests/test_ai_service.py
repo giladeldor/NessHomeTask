@@ -1,5 +1,3 @@
-"""Tests for AI service module."""
-
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 

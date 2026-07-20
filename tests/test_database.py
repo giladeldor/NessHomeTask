@@ -1,5 +1,3 @@
-"""Tests for database operations."""
-
 import json
 
 import pytest

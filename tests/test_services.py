@@ -1,16 +1,3 @@
-"""
-Comprehensive tests for Phase 5 Business Logic Services.
-
-Tests verify:
-1. File validation (size, type, integrity)
-2. Text extraction (txt, pdf, docx)
-3. OpenAI integration (mocked)
-4. AI service orchestration
-5. Asset service upload workflow
-6. Search service integration
-7. Cross-layer connections and error handling
-"""
-
 import json
 import tempfile
 from datetime import datetime
@@ -39,6 +26,19 @@ from src.services.asset_service import AssetService
 from src.services.search_service import SearchService
 from src.utils.file_validator import FileValidator
 from src.utils.text_extractor import TextExtractor
+
+"""
+Comprehensive tests for Phase 5 Business Logic Services.
+
+Tests verify:
+1. File validation (size, type, integrity)
+2. Text extraction (txt, pdf, docx)
+3. OpenAI integration (mocked)
+4. AI service orchestration
+5. Asset service upload workflow
+6. Search service integration
+7. Cross-layer connections and error handling
+"""
 
 
 @pytest.fixture(scope="function")

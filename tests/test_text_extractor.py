@@ -1,5 +1,3 @@
-"""Tests for text extraction module."""
-
 from pathlib import Path
 
 import pytest
