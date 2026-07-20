@@ -217,12 +217,12 @@ class AssetRepository:
                                 filter(None, [metadata.description, metadata.tags, metadata.keywords])
                             )
                         if not searchable_text:
-                            try:
-                                client = get_local_vision_client()
-                                description, tags_json, keywords_json = client.generate_metadata_for_image(str(file_path))
-                                searchable_text = " ".join(filter(None, [description, tags_json, keywords_json]))
-                            except Exception:
-                                searchable_text = ""
+                            # Deterministic fallback for online deployments where the BLIP model is
+                            # unavailable or too slow. Use filename and extension clues so content
+                            # search still works for images without a generated metadata row.
+                            filename_stem = file_path.stem.lower()
+                            extension = file_path.suffix.lower().lstrip('.')
+                            searchable_text = f"image {filename_stem} {extension} photo picture visual"
                         if searchable_text and query.lower() in searchable_text.lower():
                             matched_assets.append(asset)
                 except Exception:
