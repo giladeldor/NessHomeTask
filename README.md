@@ -24,11 +24,13 @@ Knowledge Management System is a FastAPI-based application for uploading files, 
 
 ```text
 src/
-  app/            # FastAPI entry point, routes, and static UI
   api/            # API schemas and request/response models
-  services/       # Business logic for uploads, search, and metadata
-  repositories/   # Database access layer
+  app/            # FastAPI entry point, routes, and static UI
+  core/           # Basic instalation and parameters for the app
   integrations/   # OpenAI and local vision clients
+  models/         # Schemas and DB functions
+  repositories/   # Database access layer
+  services/       # Business logic for uploads, search, and metadata
   utils/          # Validation and text extraction helpers
 tests/            # Pytest suite
 uploads/          # Uploaded files
@@ -128,12 +130,6 @@ Knowledge Management System is a FastAPI-based document management and search pl
 
 ```bash
 docker compose up --build
-```
-
-Or:
-
-```bash
-docker-compose up --build
 ```
 
 The app is exposed on port 8000.
