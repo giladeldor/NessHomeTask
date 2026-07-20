@@ -1,11 +1,3 @@
-"""
-SQLAlchemy models for the Knowledge Management System.
-
-These models represent the database schema:
-- Asset: Uploaded files (images, text)
-- Metadata: AI-generated searchable metadata
-"""
-
 from datetime import datetime
 from typing import Optional
 
@@ -14,6 +6,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.database import Base
 
+"""
+SQLAlchemy models for the Knowledge Management System.
+
+These models represent the database schema:
+- Asset: Uploaded files (images, text)
+- Metadata: AI-generated searchable metadata
+"""
 
 class Asset(Base):
     """Represents an uploaded file (image or text)."""

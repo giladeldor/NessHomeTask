@@ -1,15 +1,14 @@
+from pathlib import Path
+from typing import Literal
+
+from pydantic_settings import BaseSettings
+
 """
 Application configuration and settings.
 
 Environment variables are loaded from .env file.
 All configuration is type-safe using Pydantic settings.
 """
-
-from pathlib import Path
-from typing import Literal
-
-from pydantic_settings import BaseSettings
-
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""

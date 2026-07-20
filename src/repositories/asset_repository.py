@@ -1,16 +1,13 @@
+from typing import Optional
+from sqlalchemy.orm import Session
+from src.models.asset import Asset, Metadata
+
 """
 Repository layer for data access.
 
 Repositories provide a clean interface for database operations.
 This layer abstracts SQLAlchemy from the service layer.
 """
-
-from typing import Optional
-
-from sqlalchemy.orm import Session
-
-from src.models.asset import Asset, Metadata
-
 
 class AssetRepository:
     """Repository for Asset model operations."""
@@ -169,7 +166,6 @@ class AssetRepository:
                 Asset.id,
                 Asset.filename,
                 Asset.file_type,
-                Asset.file_size,
                 Asset.created_at,
                 Metadata.description,
                 Metadata.tags,
@@ -202,7 +198,6 @@ class AssetRepository:
                     "id": row.id,
                     "filename": row.filename,
                     "file_type": row.file_type,
-                    "file_size": row.file_size,
                     "created_at": row.created_at,
                     "description": row.description,
                     "tags": row.tags,

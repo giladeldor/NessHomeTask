@@ -1,9 +1,3 @@
-"""
-File validation utilities.
-
-Validates file type, size, and integrity.
-"""
-
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +9,11 @@ from src.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+"""
+File validation utilities.
+
+Validates file type, size, and integrity.
+"""
 
 class FileValidator:
     """Validates uploaded files."""

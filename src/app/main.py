@@ -1,13 +1,3 @@
-"""
-Main FastAPI application.
-
-Initializes the Knowledge Management System API with:
-- Route registration
-- Middleware configuration
-- Error handling
-- Database initialization
-"""
-
 from pathlib import Path
 
 from fastapi import FastAPI, Request, status
@@ -28,6 +18,15 @@ logger = get_logger(__name__)
 
 from fastapi.openapi.docs import get_swagger_ui_html
 
+"""
+Main FastAPI application.
+
+Initializes the Knowledge Management System API with:
+- Route registration
+- Middleware configuration
+- Error handling
+- Database initialization
+"""
 
 def get_custom_swagger_ui_html() -> str:
     """Generate custom Swagger UI with better styling"""

@@ -1,15 +1,3 @@
-"""
-Centralized logging configuration.
-
-Sets up a logger that writes to:
-- Console (stdout): always active
-- Rotating file (logs/app.log): up to 5MB per file, 3 backups kept
-
-Usage:
-    from src.core.logging_config import get_logger
-    logger = get_logger(__name__)
-"""
-
 import logging
 import logging.handlers
 from pathlib import Path
@@ -22,6 +10,17 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB per file
 BACKUP_COUNT = 3              # Keep 3 rotated files
 
+"""
+Centralized logging configuration.
+
+Sets up a logger that writes to:
+- Console (stdout): always active
+- Rotating file (logs/app.log): up to 5MB per file, 3 backups kept
+
+Usage:
+    from src.core.logging_config import get_logger
+    logger = get_logger(__name__)
+"""
 
 def setup_logging(level: int = logging.INFO) -> None:
     """

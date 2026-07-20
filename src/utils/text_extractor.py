@@ -1,9 +1,3 @@
-"""
-Text extraction utilities.
-
-Extracts text from various file formats.
-"""
-
 from pathlib import Path
 from typing import Optional
 

@@ -1,9 +1,3 @@
-"""
-Search service for asset discovery.
-
-Provides search with relevance scoring and pagination.
-"""
-
 from typing import Optional
 
 from sqlalchemy.orm import Session

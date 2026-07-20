@@ -1,7 +1,3 @@
-"""
-Utility functions for file and string operations.
-"""
-
 import json
 import re
 from typing import Any

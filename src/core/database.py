@@ -1,15 +1,15 @@
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from src.core.config import settings
+
 """
 Database configuration and session management.
 
 Uses SQLAlchemy for ORM and SQLite for persistence.
 Provides session factory and base class for models.
 """
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
-from sqlalchemy.pool import StaticPool
-
-from src.core.config import settings
 
 # Create SQLAlchemy engine
 # Use StaticPool for SQLite to avoid threading issues in tests
