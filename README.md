@@ -1,78 +1,180 @@
 # Knowledge Management System
 
-Knowledge Management System is a FastAPI application for uploading files, extracting content, generating AI metadata, and searching assets.
+Knowledge Management System is a FastAPI-based application for uploading files, extracting document text, generating AI metadata, and searching assets through a simple web interface and REST API.
 
-## What This Project Does
+## What the project does
 
-- Upload files (text documents and images)
-- Extract text from supported document formats
-- Generate metadata using AI integrations
-- Search by filename, description, tags, keywords, and extracted text
-- Expose REST API endpoints with Swagger documentation
+- Upload text documents, PDFs, Word files, and images.
+- Extract and store text from supported document formats.
+- Generate descriptions, tags, and keywords using AI integrations.
+- Search assets by filename, content, tags, keywords, and extracted text.
+- Expose a REST API with Swagger and ReDoc documentation.
 
-## Tech Stack
+## Tech stack
 
 - Python 3.11+
-- FastAPI
+- FastAPI and Uvicorn
 - SQLAlchemy + Alembic
-- SQLite (default)
-- Poetry
-- Docker + Docker Compose
+- SQLite by default for local use
+- Poetry for dependency management
+- Docker and Docker Compose for containerized runs
+- Render configuration for cloud deployment
 
-## Quick Start (Local)
+## Project structure
+
+```text
+src/
+  app/            # FastAPI entry point, routes, and static UI
+  api/            # API schemas and request/response models
+  services/       # Business logic for uploads, search, and metadata
+  repositories/   # Database access layer
+  integrations/   # OpenAI and local vision clients
+  utils/          # Validation and text extraction helpers
+tests/            # Pytest suite
+uploads/          # Uploaded files
+scripts/          # Startup and helper scripts
+data/             # Local database and runtime files
+```
+
+# Architecture Documentation
+
+## System Overview
+
+Knowledge Management System is a FastAPI-based document management and search platform with AI-powered metadata extraction.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Frontend (Web UI)                         │
+│                    (HTML/JS/Bootstrap)                       │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    FastAPI Server                           │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  API Routes (routes/)                                │  │
+│  │  • Upload, Download, List, Delete, Search            │  │
+│  └──────────────────────────────────────────────────────┘  │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+        ┌────────────────┼────────────────┐
+        ▼                ▼                ▼
+    ┌────────┐    ┌──────────┐    ┌──────────┐
+    │Services│    │Utilities │    │Integrations│
+    └────────┘    └──────────┘    └──────────┘
+        │
+        ├─► asset_service
+        ├─► ai_service
+        ├─► search_service
+        │
+        ▼
+    ┌─────────────────────────────────────────┐
+    │    Repositories (Database Layer)         │
+    │    • AssetRepository                     │
+    │    • MetadataRepository                  │
+    └─────────────────────────────────────────┘
+        │
+        ▼
+    ┌─────────────────────────────────────────┐
+    │    SQLAlchemy ORM                        │
+    │    • Asset Model                         │
+    │    • Metadata Model                      │
+    └─────────────────────────────────────────┘
+        │
+        ▼
+    ┌─────────────────────────────────────────┐
+    │    SQLite Database                       │
+    │    (Upgradeable to PostgreSQL)           │
+    └─────────────────────────────────────────┘
+```
+
+
+## Quick start
 
 1. Install dependencies:
 
-	   poetry install
+   ```bash
+   poetry install
+   ```
 
-2. Create environment file:
+2. Create an environment file:
 
-	   copy .env.example .env
+   ```bash
+   copy .env.example .env
+   ```
 
-   If .env.example does not exist, create .env manually with required variables.
+   If .env.example is absent, create .env manually and include the required variables.
 
 3. Run database migrations:
 
-	   poetry run alembic upgrade head
+   ```bash
+   poetry run alembic upgrade head
+   ```
 
 4. Start the API:
 
-	   poetry run uvicorn src.app.main:app --host 127.0.0.1 --port 8000 --reload
+   ```bash
+   poetry run uvicorn src.app.main:app --host 127.0.0.1 --port 8000 --reload
+   ```
 
-5. Open:
+5. Open the app:
 
-- API root: http://localhost:8000/api
-- Swagger docs: http://localhost:8000/api/docs
-- Health: http://localhost:8000/api/health
+   - Web UI: http://localhost:8000/
+   - API root: http://localhost:8000/api
+   - Swagger docs: http://localhost:8000/api/docs
+   - Health check: http://localhost:8000/api/health
 
-## Docker
+## Docker and container deployment
 
-### Build and run
+### Build and run locally
 
-	docker compose up --build
+```bash
+docker compose up --build
+```
 
-or:
+Or:
 
-	docker-compose up --build
+```bash
+docker-compose up --build
+```
 
 The app is exposed on port 8000.
 
-### Stop
+### Stop the container
 
-	docker compose down
+```bash
+docker compose down
+```
 
-## Environment Variables
+### Render deployment
 
-Common variables used by the app and deployment config:
+The repository includes a Render configuration file for deployment. The service is set up to use:
+
+- Build command: poetry install
+- Start command: bash scripts/start.sh
+- Health check: /api/health
+- Persistent disks for uploads and data
+
+## Environment variables
+
+Common variables used by the app and deployment setup:
 
 - OPENAI_API_KEY
-- DATABASE_URL (default in deployment: sqlite:///./data/knowledge_base.db)
-- UPLOAD_DIR (default: /app/uploads)
-- MAX_FILE_SIZE (default: 10485760)
-- AI_TIMEOUT (default: 25)
-- DEBUG (default: false)
+- DATABASE_URL (defaults to sqlite:///./data/knowledge_base.db in local deployment)
+- UPLOAD_DIR (defaults to /app/uploads)
+- MAX_FILE_SIZE (defaults to 10485760)
+- AI_TIMEOUT (defaults to 25)
+- DEBUG (defaults to false)
 
-## API Summary
+## API overview
+
+Base URL:
+
+```text
+http://localhost:8000/api
+```
+
+### Main endpoints
 
 - GET /api/health
 - POST /api/upload
@@ -82,59 +184,52 @@ Common variables used by the app and deployment config:
 - DELETE /api/assets/{asset_id}
 - GET /api/search
 
-## Test Status
+### Example requests
 
-Latest full run (2026-07-19):
+Upload a file:
 
-- Total collected: 75
-- Passed: 75
-- Failed: 0
-- Errors: 0
-- Duration: 29.61s
+```bash
+curl -X POST http://localhost:8000/api/upload -F "file=@document.pdf"
+```
 
-Failed tests from the previous run were removed from the suite.
+Search for content:
 
-To run tests locally:
+```bash
+curl "http://localhost:8000/api/search?q=machine+learning"
+```
 
-	poetry run pytest -q
+Download an uploaded asset:
 
-## Assignment Compliance
+```bash
+curl http://localhost:8000/api/assets/1/download --output downloaded_file.pdf
+```
 
-This repository is aligned with the assignment requirement to demonstrate engineering approach over production hardening.
+## Architecture overview
 
-### 1) Uploaded to Git
+### API layer
 
-- The project is structured as a Git-ready codebase.
-- If not already pushed, push to your remote repository:
+Handles HTTP requests and responses for uploads, downloads, listing, deletion, and search.
 
-	  git add .
-	  git commit -m "Initial assignment submission"
-	  git push origin <branch>
+### Service layer
 
-### 2) Containerized and Available Online
+Contains the core business logic for file validation, storage, metadata generation, text extraction, and search orchestration.
 
-- Containerization is implemented using Dockerfile and docker-compose.yml.
-- Cloud deployment is configured for Render using render.yaml.
-- Render service setup uses:
-  - Build command: poetry install
-  - Start command: bash scripts/start.sh
-  - Health check: /api/health
-  - Persistent disks for data and uploads
+### Repository layer
 
-After deployment, include these two links in your submission:
+Provides database access for assets and metadata using SQLAlchemy models.
 
-- Public app URL
-- Public Git repository URL
+### Integration layer
 
-### 3) Scope Intentionally Excludes Production Concerns
+Connects the application to AI providers and local vision services. The implementation first tries AI metadata generation and falls back to a local model when needed.
 
-Per assignment instructions, the solution does not aim for production-grade:
+### Database layer
 
-- No authentication/authorization
-- No scalability architecture
-- No production-grade security hardening
+Uses SQLAlchemy with SQLite by default. Alembic is included for migrations.
 
-## Notes
+## Testing
 
-- The startup script runs Alembic migrations before launching the server.
-- SQLite is used by default for simplicity.
+Run the test suite locally:
+
+```bash
+poetry run pytest -q
+```
