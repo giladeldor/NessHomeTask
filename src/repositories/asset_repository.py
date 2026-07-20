@@ -1,6 +1,10 @@
+from pathlib import Path
 from typing import Optional
+
 from sqlalchemy.orm import Session
+
 from src.models.asset import Asset, Metadata
+from src.utils.text_extractor import TextExtractor
 
 """
 Repository layer for data access.
@@ -161,16 +165,18 @@ class AssetRepository:
         search_term = f"%{query.lower()}%"
 
         # Build query with relevance scoring
-        results = (
+        rows = (
             self.db.query(
                 Asset.id,
                 Asset.filename,
                 Asset.file_type,
                 Asset.file_size,
                 Asset.created_at,
+                Asset.file_path,
                 Metadata.description,
                 Metadata.tags,
                 Metadata.keywords,
+                Metadata.extracted_text,
             )
             .outerjoin(Metadata, Asset.id == Metadata.asset_id)
             .filter(
@@ -184,11 +190,46 @@ class AssetRepository:
             .all()
         )
 
+        # Fallback: if no metadata-backed matches were found, inspect the actual file content
+        # for text assets that exist on disk. This makes content searches work even before
+        # background metadata generation has populated the database.
+        if not rows:
+            assets = self.db.query(Asset).order_by(Asset.created_at.desc()).all()
+            matched_assets = []
+            for asset in assets:
+                try:
+                    if asset.file_type != "text":
+                        continue
+                    file_path = Path(asset.file_path)
+                    if not file_path.exists():
+                        continue
+                    text = TextExtractor.extract_text(file_path)
+                    if text and query.lower() in text.lower():
+                        matched_assets.append(asset)
+                except Exception:
+                    continue
+
+            rows = [
+                (
+                    asset.id,
+                    asset.filename,
+                    asset.file_type,
+                    asset.file_size,
+                    asset.created_at,
+                    asset.file_path,
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+                for asset in matched_assets
+            ]
+
         # Calculate total before pagination
-        total = len(results)
+        total = len(rows)
 
         # Apply pagination
-        paginated_results = results[skip : skip + limit]
+        paginated_results = rows[skip : skip + limit]
 
         # Convert to dictionaries and calculate relevance scores
         result_dicts = []
@@ -196,14 +237,14 @@ class AssetRepository:
             score = self._calculate_relevance_score(query.lower(), row)
             result_dicts.append(
                 {
-                    "id": row.id,
-                    "filename": row.filename,
-                    "file_type": row.file_type,
-                    "file_size": row.file_size,
-                    "created_at": row.created_at,
-                    "description": row.description,
-                    "tags": row.tags,
-                    "keywords": row.keywords,
+                    "id": row[0],
+                    "filename": row[1],
+                    "file_type": row[2],
+                    "file_size": row[3],
+                    "created_at": row[4],
+                    "description": row[6],
+                    "tags": row[7],
+                    "keywords": row[8],
                     "relevance_score": score,
                 }
             )
@@ -222,23 +263,29 @@ class AssetRepository:
         - Exact tag match: +100
         - Keyword match: +50
         - Description match: +30
+        - Extracted content match: +20
         """
         score = 0
         query_lower = query.lower()
 
         # Check tags (highest score)
-        if row.tags:
-            if query_lower in row.tags.lower():
+        if row[7]:
+            if query_lower in row[7].lower():
                 score += 100
 
         # Check keywords
-        if row.keywords:
-            if query_lower in row.keywords.lower():
+        if row[8]:
+            if query_lower in row[8].lower():
                 score += 50
 
         # Check description
-        if row.description:
-            if query_lower in row.description.lower():
+        if row[6]:
+            if query_lower in row[6].lower():
                 score += 30
+
+        # Check extracted text/content fallback
+        if row[9]:
+            if query_lower in row[9].lower():
+                score += 20
 
         return score if score > 0 else 10  # Minimum score for matches

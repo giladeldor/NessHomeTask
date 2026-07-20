@@ -606,6 +606,28 @@ class TestSearchService:
         assert len(page1.results) == 2
         assert len(page2.results) == 2
 
+    def test_search_falls_back_to_file_content_when_metadata_is_missing(
+        self, db_session: Session, tmp_path: Path
+    ) -> None:
+        """Search should match file content even before metadata is generated."""
+        content_file = tmp_path / "content_search.txt"
+        content_file.write_text("This document discusses neural networks and machine learning.", encoding="utf-8")
+
+        repo = AssetRepository(db_session)
+        repo.create_asset(
+            filename="content_search.txt",
+            file_type="text",
+            mime_type="text/plain",
+            file_path=str(content_file),
+            file_size=content_file.stat().st_size,
+        )
+
+        service = SearchService(db_session)
+        result = service.search("machine learning", page=1, per_page=50)
+
+        assert result.total >= 1
+        assert any(item.filename == "content_search.txt" for item in result.results)
+
     def test_empty_search(self, db_session: Session) -> None:
         """Test empty search query."""
         service = SearchService(db_session)
