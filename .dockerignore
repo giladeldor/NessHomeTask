@@ -13,7 +13,6 @@ build
 .DS_Store
 .vscode
 .idea
-README.md
 .env.local
 uploads/*
 data/*
