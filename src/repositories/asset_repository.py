@@ -3,6 +3,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from src.integrations.local_vision import get_local_vision_client
 from src.models.asset import Asset, Metadata
 from src.utils.text_extractor import TextExtractor
 
@@ -198,14 +199,32 @@ class AssetRepository:
             matched_assets = []
             for asset in assets:
                 try:
-                    if asset.file_type != "text":
-                        continue
                     file_path = Path(asset.file_path)
                     if not file_path.exists():
                         continue
-                    text = TextExtractor.extract_text(file_path)
-                    if text and query.lower() in text.lower():
-                        matched_assets.append(asset)
+
+                    if asset.file_type == "text":
+                        text = TextExtractor.extract_text(file_path)
+                        if text and query.lower() in text.lower():
+                            matched_assets.append(asset)
+                        continue
+
+                    if asset.file_type == "image":
+                        metadata = self.db.query(Metadata).filter(Metadata.asset_id == asset.id).first()
+                        searchable_text = ""
+                        if metadata:
+                            searchable_text = " ".join(
+                                filter(None, [metadata.description, metadata.tags, metadata.keywords])
+                            )
+                        if not searchable_text:
+                            try:
+                                client = get_local_vision_client()
+                                description, tags_json, keywords_json = client.generate_metadata_for_image(str(file_path))
+                                searchable_text = " ".join(filter(None, [description, tags_json, keywords_json]))
+                            except Exception:
+                                searchable_text = ""
+                        if searchable_text and query.lower() in searchable_text.lower():
+                            matched_assets.append(asset)
                 except Exception:
                     continue
 
